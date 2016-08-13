@@ -27,3 +27,13 @@
 *.exe
 *.out
 *.app
+
+# TempFile
+*db
+*opendb
+
+#FileFolder
+.vs/
+_OutPut_/
+Server/_Temp_/
+Server/_Temp_/
