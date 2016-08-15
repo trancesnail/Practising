@@ -4,6 +4,8 @@
 #include "Testserver/TestServer.h"
 #include "EventServer/EventServer.h"
 
+#include "a.pb.h"
+
 //#pragma comment (lib,"LibEvent.lib")
 
 
@@ -16,8 +18,11 @@ int main()
 	//	TestServer svr;
 	//	2.
 	//	EventTimerServer svr;
-
-	EventHelloServer svr;
+	//	3.
+	//	EventHelloServer svr
+	//	4.
+	//	EventIOCPServer svr
+	EventIOCPServer svr;
 	svr.Run();
 
 
