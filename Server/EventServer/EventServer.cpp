@@ -163,17 +163,39 @@ static void iocp_conn_readcb(struct bufferevent *bev, void *user_data)
 	}
 	else
 	{
-		std::cout<< "iocp_conn_readcb:" <<evbuffer_get_length(input)<< std::endl;
+
 		size_t bufferevent_read(struct bufferevent *bufev, void *data, size_t size);
 		char readbuf[100] = {0};
 		size_t len = bufferevent_read(bev, (void *)readbuf,100);
-		std::cout << "Read:" << len <<"Read connect: "<< readbuf << std::endl;
-		std::string a = MESSAGE;
-		a.append("SvrSent:");
+		std::string a ;
+		std::map<bufferevent*, sockaddr_in*>::const_iterator ItFind = map_Client.find(bev); 
+
+		if (ItFind != map_Client.cend())
+		{
+			a.append(inet_ntoa(ItFind->second->sin_addr));
+			a.append(":");
+			char sPort[8] = { 0 };
+			sprintf(sPort, "%d", ItFind->second->sin_port);
+			a.append(sPort);
+		}
+		else
+		{
+			a.append("UNKNOW:IP-");
+		}
+
+		a.append(" By Svr Sent:");
 		a.append(readbuf);
+		a.append("\r\n");
 		//bufferevent_write(bev, MESSAGE, strlen(MESSAGE));
 		//bufferevent_write(bev, readbuf, 100);
-		bufferevent_write(bev,a.c_str(),a.length()+1);
+
+		std::map<bufferevent*, sockaddr_in*>::const_iterator ItBegin = map_Client.cbegin();
+		std::map<bufferevent*, sockaddr_in*>::const_iterator ItEnd = map_Client.cend();
+
+		for ( ; ItBegin != ItEnd ; ItBegin ++)
+		{
+			bufferevent_write(ItBegin->first, a.c_str(), a.length() + 1);
+		}
 	}
 }
 
@@ -189,6 +211,7 @@ static void iocp_conn_eventcb(struct bufferevent *bev, short events, void *user_
 	}
 	/* None of the other events can happen here, since we haven't enabled
 	* timeouts */
+	map_Client.erase(bev);
 	bufferevent_free(bev);
 }
 
@@ -204,6 +227,13 @@ static void iocp_listener_cb(struct evconnlistener *listener, evutil_socket_t fd
 		event_base_loopbreak(base);
 		return;
 	}
+	sockaddr_in *psin = (sockaddr_in *)sa;
+	map_Client[bev] = psin;
+
+
+
+	std::cout << "Connect Form " << inet_ntoa(psin->sin_addr) <<":"<< psin->sin_port << std::endl;
+	std::cout << "Clinet Count:" << map_Client.size() << std::endl;
 	bufferevent_setcb(bev, iocp_conn_readcb, iocp_conn_writecb,  iocp_conn_eventcb, NULL);
 	bufferevent_enable(bev, EV_WRITE);
 	bufferevent_enable(bev, EV_READ);
@@ -247,7 +277,6 @@ int EventIOCPServer::Run()
 
 	evthread_use_windows_threads();				//如果要使用多线程，需要线程安全，那么在调用event_base_new函数之前一定要调用该函数(对应的Windows版本为evthread_use_windows_threads)。如果在event_base_new之后才调用evthread_use_pthreads，那么该event_base就不会是线程安全的了。
 	base = event_base_new_with_config(cfg);
-	std::cout<< "pBase" <<base<<std::endl;
 	
 	if (!base) {
 		fprintf(stderr, "Could not initialize libevent!\n");

@@ -73,12 +73,15 @@ public:
 #include <event2/thread.h>
 
 #include <iostream>
+#include <map>
+
+static std::map<bufferevent*, sockaddr_in*> map_Client;
 
 class EventIOCPServer
 {
 public:
 	int Run();
 private:
-
+	
 
 };

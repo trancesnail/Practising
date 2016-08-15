@@ -4,7 +4,6 @@
 #include "Testserver/TestServer.h"
 #include "EventServer/EventServer.h"
 
-#include "a.pb.h"
 
 //#pragma comment (lib,"LibEvent.lib")
 
