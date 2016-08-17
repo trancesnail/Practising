@@ -75,7 +75,7 @@ public:
 #include <iostream>
 #include <map>
 
-static std::map<bufferevent*, sockaddr_in*> map_Client;
+static std::map<bufferevent*, sockaddr_in> map_Client;
 
 class EventIOCPServer
 {

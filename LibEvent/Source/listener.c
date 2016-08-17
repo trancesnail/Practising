@@ -794,7 +794,7 @@ static const struct evconnlistener_ops evconnlistener_iocp_ops = {
 };
 
 /* XXX define some way to override this. */
-#define N_SOCKETS_PER_LISTENER 4
+#define N_SOCKETS_PER_LISTENER 4000
 
 struct evconnlistener *
 evconnlistener_new_async(struct event_base *base,

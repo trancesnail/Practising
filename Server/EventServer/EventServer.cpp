@@ -145,7 +145,7 @@ static void iocp_conn_writecb(struct bufferevent *bev, void *user_data)
 {
 	struct evbuffer *output = bufferevent_get_output(bev);
 	if (evbuffer_get_length(output) == 0) {
-		printf("flushed write answer\n");
+		//printf("flushed write answer\n");
 		//bufferevent_free(bev);
 	}
 	else
@@ -168,14 +168,15 @@ static void iocp_conn_readcb(struct bufferevent *bev, void *user_data)
 		char readbuf[100] = {0};
 		size_t len = bufferevent_read(bev, (void *)readbuf,100);
 		std::string a ;
-		std::map<bufferevent*, sockaddr_in*>::const_iterator ItFind = map_Client.find(bev); 
-
+		std::map<bufferevent*, sockaddr_in>::const_iterator ItFind = map_Client.find(bev); 
+		
 		if (ItFind != map_Client.cend())
-		{
-			a.append(inet_ntoa(ItFind->second->sin_addr));
+		{	
+			a.append(GetTime());
+			//a.append(inet_ntoa(ItFind->second.sin_addr));
 			a.append(":");
 			char sPort[8] = { 0 };
-			sprintf(sPort, "%d", ItFind->second->sin_port);
+			sprintf(sPort, "%5d\t", ItFind->second.sin_port);
 			a.append(sPort);
 		}
 		else
@@ -186,16 +187,17 @@ static void iocp_conn_readcb(struct bufferevent *bev, void *user_data)
 		a.append(" By Svr Sent:");
 		a.append(readbuf);
 		a.append("\r\n");
-		//bufferevent_write(bev, MESSAGE, strlen(MESSAGE));
-		//bufferevent_write(bev, readbuf, 100);
+		//printf(a.c_str());
 
-		std::map<bufferevent*, sockaddr_in*>::const_iterator ItBegin = map_Client.cbegin();
-		std::map<bufferevent*, sockaddr_in*>::const_iterator ItEnd = map_Client.cend();
+		bufferevent_write(ItFind->first, a.c_str(), a.length() + 1);
 
-		for ( ; ItBegin != ItEnd ; ItBegin ++)
-		{
-			bufferevent_write(ItBegin->first, a.c_str(), a.length() + 1);
-		}
+		//std::map<bufferevent*, sockaddr_in>::const_iterator ItBegin = map_Client.cbegin();
+		//std::map<bufferevent*, sockaddr_in>::const_iterator ItEnd = map_Client.cend();
+
+		//for ( ; ItBegin != ItEnd ; ItBegin ++)
+		//{
+		//	bufferevent_write(ItBegin->first, a.c_str(), a.length() + 1);
+		//}
 	}
 }
 
@@ -227,12 +229,11 @@ static void iocp_listener_cb(struct evconnlistener *listener, evutil_socket_t fd
 		event_base_loopbreak(base);
 		return;
 	}
-	sockaddr_in *psin = (sockaddr_in *)sa;
+	sockaddr_in * psinTmp = (sockaddr_in*) sa;
+	sockaddr_in psin = (*psinTmp);
 	map_Client[bev] = psin;
 
-
-
-	std::cout << "Connect Form " << inet_ntoa(psin->sin_addr) <<":"<< psin->sin_port << std::endl;
+	std::cout << "Connect Form " << inet_ntoa(psin.sin_addr) <<":"<< psin.sin_port << std::endl;
 	std::cout << "Clinet Count:" << map_Client.size() << std::endl;
 	bufferevent_setcb(bev, iocp_conn_readcb, iocp_conn_writecb,  iocp_conn_eventcb, NULL);
 	bufferevent_enable(bev, EV_WRITE);
