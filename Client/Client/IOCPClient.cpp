@@ -42,8 +42,9 @@ void WriteData(void * arg)
 	bufferevent * bev = (bufferevent *)arg;
 	Sleep(1000);
 
-	char MESSAGE[256] = "我连上来了！";
-	bufferevent_write(bev, MESSAGE, strlen(MESSAGE));
+	char MESSAGE[MAX_TO_READ_EVER] ;
+	memset(MESSAGE,65, MAX_TO_READ_EVER);
+	bufferevent_write(bev, MESSAGE, MAX_TO_READ_EVER);
 	printf("WriteData");
 
 }
@@ -57,8 +58,8 @@ static void iocp_conn_readcb(struct bufferevent *bev, void *user_data)
 	}
 	else
 	{
-		char readbuf[100] = { 0 };
-		size_t len = bufferevent_read(bev, (void *)readbuf, 100);
+		char readbuf[256001] = { 0 };
+		size_t len = bufferevent_read(bev, (void *)readbuf, 256001);
 		std::string a(readbuf);
 		std::cout<<a<<std::endl;
 

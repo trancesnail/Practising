@@ -22,8 +22,10 @@ int main()
 	//	4.
 	//	EventIOCPServer svr
 	EventIOCPServer svr;
-	svr.Run();
-
+	if (svr.Init(0))
+	{
+		svr.Run();
+	}
 
 	return 0;
 }

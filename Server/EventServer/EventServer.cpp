@@ -1,4 +1,5 @@
 #include "EventServer.h"
+#include <iostream>
 
 /*** EventTimerServer */
 
@@ -165,8 +166,8 @@ static void iocp_conn_readcb(struct bufferevent *bev, void *user_data)
 	{
 
 		size_t bufferevent_read(struct bufferevent *bufev, void *data, size_t size);
-		char readbuf[100] = {0};
-		size_t len = bufferevent_read(bev, (void *)readbuf,100);
+		char readbuf[MAX_TO_READ_EVER] = {0};
+		size_t len = bufferevent_read(bev, (void *)readbuf, MAX_TO_READ_EVER);
 		std::string a ;
 		std::map<bufferevent*, sockaddr_in>::const_iterator ItFind = map_Client.find(bev); 
 		
@@ -243,73 +244,78 @@ static void iocp_listener_cb(struct evconnlistener *listener, evutil_socket_t fd
 }
 
 
-
-
-int EventIOCPServer::Run()
+EventIOCPServer::EventIOCPServer()
 {
-	struct event_base *base;
-	struct evconnlistener *listener;
-	struct event *signal_event;
 
-	struct sockaddr_in sin;
-#ifdef WIN32
-	WSADATA wsa_data;
-	WSAStartup(0x0201, &wsa_data);
-#endif
+}
 
-
-	memset(&sin, 0, sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(PORT);
-	
-	event_config * cfg = event_config_new();
-	if (cfg == nullptr)
-	{
-		fprintf(stderr, "Could not initialize event_config!\n");
-		return 1;
-	}
-	SYSTEM_INFO si;
-
-	GetSystemInfo(&si);
-
-	event_config_set_num_cpus_hint(cfg,(int)si.dwNumberOfProcessors);
-	event_config_set_flag(cfg,event_base_config_flag::EVENT_BASE_FLAG_STARTUP_IOCP);
-	//event_config_require_features(cfg, event_method_feature::EV_FEATURE_ET);			//设置后eventops被修改 base生成失败
-
-	evthread_use_windows_threads();				//如果要使用多线程，需要线程安全，那么在调用event_base_new函数之前一定要调用该函数(对应的Windows版本为evthread_use_windows_threads)。如果在event_base_new之后才调用evthread_use_pthreads，那么该event_base就不会是线程安全的了。
-	base = event_base_new_with_config(cfg);
-	
-	if (!base) {
-		fprintf(stderr, "Could not initialize libevent!\n");
-		return 1;
-	}
-
-	listener = evconnlistener_new_bind(base, iocp_listener_cb, (void *)base,
-		LEV_OPT_REUSEABLE | LEV_OPT_CLOSE_ON_FREE, -1,
-		(struct sockaddr*)&sin,
-		sizeof(sin));
-
-	if (!listener) {
-		fprintf(stderr, "Could not create a listener!\n");
-		return 1;
-	}
-
-	signal_event = evsignal_new(base, SIGINT, signal_cb, (void *)base);
-
-	if (!signal_event || event_add(signal_event, NULL) < 0) {
-		fprintf(stderr, "Could not create/add a signal event!\n");
-		return 1;
-	}
-
-	event_base_dispatch(base);
+ EventIOCPServer::~EventIOCPServer()
+{
 
 	evconnlistener_free(listener);
 	event_free(signal_event);
 	event_base_free(base);
 
 	printf("done\n");
+}
+ bool EventIOCPServer::Init( int port)
+ {
+	 struct sockaddr_in sin;
+	 WSADATA wsa_data;
+	 WSAStartup(0x0201, &wsa_data);
+	 memset(&sin, 0, sizeof(sin));
+	 sin.sin_family = AF_INET;
 
-	return 0;
+	 int Port = 0;
+
+	 port <= 0 ? Port = PORT : Port = port;
+	 sin.sin_port = htons(Port) ;
+
+	 event_config * cfg = event_config_new();
+	 if (cfg == nullptr)
+	 {
+		 fprintf(stderr, "Could not initialize event_config!\n");
+		 return false;
+	 }
+
+	 SYSTEM_INFO si;
+	 GetSystemInfo(&si);
+
+	 event_config_set_num_cpus_hint(cfg, (int)si.dwNumberOfProcessors);
+	 event_config_set_flag(cfg, event_base_config_flag::EVENT_BASE_FLAG_STARTUP_IOCP);
+	 //event_config_require_features(cfg, event_method_feature::EV_FEATURE_ET);			//设置后eventops被修改 base生成失败
+
+	 evthread_use_windows_threads();				//如果要使用多线程，需要线程安全，那么在调用event_base_new函数之前一定要调用该函数(对应的Windows版本为evthread_use_windows_threads)。如果在event_base_new之后才调用evthread_use_pthreads，那么该event_base就不会是线程安全的了。
+	 base = event_base_new_with_config(cfg);
+
+	 if (!base) {
+		 fprintf(stderr, "Could not initialize libevent!\n");
+		 return false;
+	 }
+
+	 listener = evconnlistener_new_bind(base, iocp_listener_cb, (void *)base,
+		 LEV_OPT_REUSEABLE | LEV_OPT_CLOSE_ON_FREE, -1,
+		 (struct sockaddr*)&sin,
+		 sizeof(sin));
+
+	 if (!listener) {
+		 fprintf(stderr, "Could not create a listener!\n");
+		 return false;
+	 }
+
+	 signal_event = evsignal_new(base, SIGINT, signal_cb, (void *)base);
+
+	 if (!signal_event || event_add(signal_event, NULL) < 0) {
+		 fprintf(stderr, "Could not create/add a signal event!\n");
+		 return false;
+	 }
+	 std::cout<<"服务开启:"<< Port<<std::endl;
+	 return true;
+ }
+void EventIOCPServer::Run()
+{
+	event_base_dispatch(base);
+	std::cout <<"Begin:"<< std::endl;
 }
 
 
