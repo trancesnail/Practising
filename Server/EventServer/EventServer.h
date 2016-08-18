@@ -74,6 +74,7 @@ public:
 
 #include <iostream>
 #include <map>
+#include <thread>
 
 static std::map<bufferevent*, sockaddr_in> map_Client;
 
@@ -81,17 +82,21 @@ static std::map<bufferevent*, sockaddr_in> map_Client;
 #define MAX_TO_READ_EVER 16384
 
 #define MAX_TO_WRITE_EVER 16384
-
+static int run = 0; 
 class EventIOCPServer
 {
 public:
 	EventIOCPServer();
 	bool Init(int port);
-	void Run();
+	virtual void Run();
 	virtual ~EventIOCPServer(); 
+
+	virtual void loop();
 private:
-	
+
+
 	struct event_base *base;
 	struct evconnlistener *listener;
 	struct event *signal_event;
+	std::thread *  dis;
 };

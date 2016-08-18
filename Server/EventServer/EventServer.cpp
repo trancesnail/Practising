@@ -1,6 +1,7 @@
 #include "EventServer.h"
 #include <iostream>
 
+
 /*** EventTimerServer */
 
 void onTime(intptr_t sock, short event, void *arg)
@@ -244,6 +245,15 @@ static void iocp_listener_cb(struct evconnlistener *listener, evutil_socket_t fd
 }
 
 
+void dispatch(struct event_base * base)
+{
+	while (!run) {             // wait until main() sets ready...
+		std::this_thread::yield();
+	}
+	event_base_dispatch(base);
+	std::cout << "Close Server!"<< std::endl;
+}
+
 EventIOCPServer::EventIOCPServer()
 {
 
@@ -251,7 +261,6 @@ EventIOCPServer::EventIOCPServer()
 
  EventIOCPServer::~EventIOCPServer()
 {
-
 	evconnlistener_free(listener);
 	event_free(signal_event);
 	event_base_free(base);
@@ -309,13 +318,27 @@ EventIOCPServer::EventIOCPServer()
 		 fprintf(stderr, "Could not create/add a signal event!\n");
 		 return false;
 	 }
+	 std::thread *  dis = new std::thread(dispatch, base);
 	 std::cout<<"·şÎñ¿ªÆô:"<< Port<<std::endl;
 	 return true;
  }
+
+
 void EventIOCPServer::Run()
-{
-	event_base_dispatch(base);
+{	
+	run = true;
 	std::cout <<"Begin:"<< std::endl;
+	int count = 100000;
+	std::cout << GetTime()<< std::endl;
+	while (count -- )
+	{
+		loop();
+	}
+	std::cout << GetTime() << std::endl;
 }
 
+void EventIOCPServer::loop()
+{
+	//std::cout << "Loop!" << std::endl;
+}
 
